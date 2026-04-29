@@ -59,10 +59,15 @@ def create_goal_item():
         item_name = input("Masukkan nama goal barang: ").strip()
 
     price = read_float("Masukkan harga goal barang: ", minimum=0)
+    return_percent = 0
+
+    if read_yes_no("Apakah goal ini bisa menghasilkan uang balik? (y/n): "):
+        return_percent = read_float("Masukkan return dari barang ini (%): ", minimum=0)
 
     return {
         "name": item_name,
         "price": price,
+        "return_percent": return_percent,
     }
 
 
@@ -218,7 +223,11 @@ def show_buying_power(value, goal_items):
     affordable_goals = 0
     for goal in goal_items:
         if value >= goal["price"]:
-            print(f"- {goal['name']} ({format_money(goal['price'])})")
+            return_amount = goal["price"] * goal["return_percent"] / 100
+            print(
+                f"- {goal['name']} ({format_money(goal['price'])})"
+                f" | return {goal['return_percent']}%: {format_money(return_amount)}"
+            )
             affordable_goals += 1
 
     if affordable_goals == 0:
@@ -234,25 +243,48 @@ def calculate_purchase_total(purchases):
     return total
 
 
+def calculate_purchase_return_total(purchases):
+    total = 0
+
+    for purchase in purchases:
+        total += purchase["return_amount"]
+
+    return total
+
+
+def calculate_purchase_net_total(purchases):
+    return calculate_purchase_total(purchases) - calculate_purchase_return_total(
+        purchases
+    )
+
+
 def get_store_budget(investment_plan):
     return investment_plan["initial_amount"]
 
 
 def show_purchase_summary(investment_plan, purchases):
     budget = get_store_budget(investment_plan)
-    spent = calculate_purchase_total(purchases)
-    remaining = budget - spent
+    gross_spent = calculate_purchase_total(purchases)
+    return_total = calculate_purchase_return_total(purchases)
+    net_spent = calculate_purchase_net_total(purchases)
+    remaining = budget - net_spent
 
     print("\nStore Sekali Beli")
     print("-----------------")
     print(f"Budget dari uang awal: {format_money(budget)}")
-    print(f"Total belanja sekali beli: {format_money(spent)}")
+    print(f"Total harga barang: {format_money(gross_spent)}")
+    print(f"Total uang balik: {format_money(return_total)}")
+    print(f"Net belanja sekali beli: {format_money(net_spent)}")
     print(f"Sisa budget: {format_money(remaining)}")
 
     if purchases:
         print("\nBarang yang sudah dibeli:")
         for purchase in purchases:
-            print(f"- {purchase['name']} ({format_money(purchase['price'])})")
+            print(
+                f"- {purchase['name']} ({format_money(purchase['price'])})"
+                f" | return {purchase['return_percent']}%: "
+                f"{format_money(purchase['return_amount'])}"
+            )
     else:
         print("\nBelum ada barang yang dibeli.")
 
@@ -269,7 +301,10 @@ def show_store_catalog(goal_items, purchases):
 
     for index, item in enumerate(goal_items, start=1):
         status = "sudah dibeli" if item["name"] in purchased_names else "tersedia"
-        print(f"{index}. {item['name']} - {format_money(item['price'])} ({status})")
+        print(
+            f"{index}. {item['name']} - {format_money(item['price'])}"
+            f" | return {item['return_percent']}% ({status})"
+        )
 
 
 def buy_item(item, investment_plan, purchases):
@@ -280,14 +315,24 @@ def buy_item(item, investment_plan, purchases):
         return
 
     budget = get_store_budget(investment_plan)
-    remaining = budget - calculate_purchase_total(purchases)
+    remaining = budget - calculate_purchase_net_total(purchases)
 
     if item["price"] > remaining:
         print("Budget belum cukup untuk membeli barang ini.")
         return
 
-    purchases.append({"name": item["name"], "price": item["price"]})
+    return_amount = item["price"] * item["return_percent"] / 100
+    purchases.append(
+        {
+            "name": item["name"],
+            "price": item["price"],
+            "return_percent": item["return_percent"],
+            "return_amount": return_amount,
+        }
+    )
     print(f"Berhasil membeli {item['name']} seharga {format_money(item['price'])}.")
+    if return_amount > 0:
+        print(f"Barang ini menghasilkan uang balik {format_money(return_amount)}.")
     print("Pembelian ini sekali beli dan tidak menjadi habit.")
 
 
@@ -363,7 +408,11 @@ def show_goal_items_summary(goal_items):
         return
 
     for index, item in enumerate(goal_items, start=1):
-        print(f"{index}. {item['name']} - {format_money(item['price'])}")
+        return_amount = item["price"] * item["return_percent"] / 100
+        print(
+            f"{index}. {item['name']} - {format_money(item['price'])}"
+            f" | return {item['return_percent']}%: {format_money(return_amount)}"
+        )
 
 
 def show_profile(investment_plan, habits, goal_items):
