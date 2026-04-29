@@ -87,6 +87,36 @@ def setup_goal_items():
     return goal_items
 
 
+def choose_habit_interval():
+    while True:
+        print(
+            """
+Interval kebiasaan
+1. Setiap hari
+2. Setiap minggu
+3. Setiap dua minggu
+4. Setiap bulan
+5. Custom jumlah hari
+"""
+        )
+
+        selection = read_int("Pilih interval: ")
+
+        if selection == 1:
+            return 1, "setiap hari"
+        if selection == 2:
+            return 7, "setiap minggu"
+        if selection == 3:
+            return 14, "setiap dua minggu"
+        if selection == 4:
+            return 30, "setiap bulan"
+        if selection == 5:
+            interval_days = read_float("Masukkan interval dalam hari: ", minimum=1)
+            return interval_days, f"setiap {interval_days:g} hari"
+
+        print("Pilihan interval tidak tersedia.")
+
+
 def create_habit():
     habit_name = input("Masukkan nama kebiasaan yang ingin dikurangi: ").strip()
 
@@ -94,12 +124,16 @@ def create_habit():
         print("Nama kebiasaan tidak boleh kosong.")
         habit_name = input("Masukkan nama kebiasaan yang ingin dikurangi: ").strip()
 
-    daily_cost = read_float("Masukkan penggunaan uang per hari: ", minimum=0)
+    interval_days, interval_label = choose_habit_interval()
+    cost_per_interval = read_float(f"Masukkan biaya {interval_label}: ", minimum=0)
+    monthly_investment = cost_per_interval * 30 / interval_days
 
     return {
         "name": habit_name,
-        "daily_cost": daily_cost,
-        "monthly_investment": daily_cost * 30,
+        "cost_per_interval": cost_per_interval,
+        "interval_days": interval_days,
+        "interval_label": interval_label,
+        "monthly_investment": monthly_investment,
     }
 
 
@@ -312,7 +346,8 @@ def show_habits_summary(habits):
 
     for index, habit in enumerate(habits, start=1):
         print(
-            f"{index}. {habit['name']} | daily: {format_money(habit['daily_cost'])}"
+            f"{index}. {habit['name']} | biaya {habit['interval_label']}: "
+            f"{format_money(habit['cost_per_interval'])}"
             f" | monthly saved: {format_money(habit['monthly_investment'])}"
         )
 
