@@ -131,11 +131,21 @@ def create_habit():
 
     interval_days, interval_label = choose_habit_interval()
     cost_per_interval = read_float(f"Masukkan biaya {interval_label}: ", minimum=0)
-    monthly_investment = cost_per_interval * 30 / interval_days
+    return_percent = 0
+
+    if read_yes_no("Apakah habit ini menghasilkan uang balik? (y/n): "):
+        return_percent = read_float("Masukkan return dari habit ini (%): ", minimum=0)
+
+    return_per_interval = cost_per_interval * return_percent / 100
+    net_cost_per_interval = cost_per_interval - return_per_interval
+    monthly_investment = net_cost_per_interval * 30 / interval_days
 
     return {
         "name": habit_name,
         "cost_per_interval": cost_per_interval,
+        "return_percent": return_percent,
+        "return_per_interval": return_per_interval,
+        "net_cost_per_interval": net_cost_per_interval,
         "interval_days": interval_days,
         "interval_label": interval_label,
         "monthly_investment": monthly_investment,
@@ -208,7 +218,7 @@ def show_timeline(results):
         print(f"{years:>2} years | {bar:<40} {format_money(value)}")
         print(
             f"          uang awal: {format_money(result['initial_growth'])}"
-            f" | habit avoided: {format_money(result['habit_growth'])}"
+            f" | habit net impact: {format_money(result['habit_growth'])}"
             f" | opportunity gain: {format_money(result['opportunity_gain'])}"
         )
 
@@ -393,10 +403,17 @@ def show_habits_summary(habits):
         print(
             f"{index}. {habit['name']} | biaya {habit['interval_label']}: "
             f"{format_money(habit['cost_per_interval'])}"
-            f" | monthly saved: {format_money(habit['monthly_investment'])}"
+            f" | return {habit['return_percent']}%: "
+            f"{format_money(habit['return_per_interval'])}"
+            f" | net {habit['interval_label']}: "
+            f"{format_money(habit['net_cost_per_interval'])}"
+            f" | monthly net: {format_money(habit['monthly_investment'])}"
         )
 
-    print(f"Total monthly savings: {format_money(calculate_total_monthly_savings(habits))}")
+    print(
+        f"Total monthly net impact: "
+        f"{format_money(calculate_total_monthly_savings(habits))}"
+    )
 
 
 def show_goal_items_summary(goal_items):
