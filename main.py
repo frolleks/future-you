@@ -1,13 +1,5 @@
 TIMELINE_YEARS = [1, 5, 10, 20, 30]
 
-STORE_ITEMS = [
-    {"name": "Laptop produktivitas", "price": 12000000},
-    {"name": "Kursus skill baru", "price": 3500000},
-    {"name": "Sepeda", "price": 5000000},
-    {"name": "Liburan singkat", "price": 8000000},
-    {"name": "Dana darurat awal", "price": 10000000},
-]
-
 
 def format_money(value):
     return "Rp" + format(value, ",.2f")
@@ -36,6 +28,19 @@ def read_int(prompt):
             print("Input bukanlah nomor!")
 
 
+def read_yes_no(prompt):
+    while True:
+        answer = input(prompt).strip().lower()
+
+        if answer in ("y", "ya"):
+            return True
+
+        if answer in ("n", "no", "tidak"):
+            return False
+
+        print("Jawab dengan y/ya atau n/tidak.")
+
+
 def create_investment_plan():
     initial_amount = read_float("Masukkan jumlah uang awal: ", minimum=0)
     annual_rate = read_float("Masukkan return tahunan investasi (%): ", minimum=0)
@@ -44,6 +49,42 @@ def create_investment_plan():
         "initial_amount": initial_amount,
         "annual_rate": annual_rate,
     }
+
+
+def create_goal_item():
+    item_name = input("Masukkan nama goal barang: ").strip()
+
+    while not item_name:
+        print("Nama goal barang tidak boleh kosong.")
+        item_name = input("Masukkan nama goal barang: ").strip()
+
+    price = read_float("Masukkan harga goal barang: ", minimum=0)
+
+    return {
+        "name": item_name,
+        "price": price,
+    }
+
+
+def add_goal_item(goal_items):
+    item = create_goal_item()
+    existing_names = {goal["name"].lower() for goal in goal_items}
+
+    if item["name"].lower() in existing_names:
+        print("Goal barang dengan nama ini sudah ada.")
+        return
+
+    goal_items.append(item)
+    print(f"Goal barang {item['name']} berhasil ditambahkan.")
+
+
+def setup_goal_items():
+    goal_items = []
+
+    while read_yes_no("Tambah goal barang sekali beli sekarang? (y/n): "):
+        add_goal_item(goal_items)
+
+    return goal_items
 
 
 def create_habit():
@@ -133,24 +174,21 @@ def show_timeline(results):
         )
 
 
-def show_buying_power(value):
-    goals = {
-        "local trip": 10000000,
-        "international trip": 300000000,
-        "used car": 100000000,
-        "house down payment": 500000000,
-    }
+def show_buying_power(value, goal_items):
+    print("\nGoal barang yang terjangkau dari timeline:")
 
-    print("\nYang Anda bisa beli:")
+    if not goal_items:
+        print("- Belum ada goal barang yang dibuat.")
+        return
 
     affordable_goals = 0
-    for goal, price in goals.items():
-        if value >= price:
-            print(f"- {goal} ({format_money(price)})")
+    for goal in goal_items:
+        if value >= goal["price"]:
+            print(f"- {goal['name']} ({format_money(goal['price'])})")
             affordable_goals += 1
 
     if affordable_goals == 0:
-        print("- Keep going. Your future balance is still building.")
+        print("- Belum ada goal barang yang terjangkau.")
 
 
 def calculate_purchase_total(purchases):
@@ -185,12 +223,17 @@ def show_purchase_summary(investment_plan, purchases):
         print("\nBelum ada barang yang dibeli.")
 
 
-def show_store_catalog(purchases):
+def show_store_catalog(goal_items, purchases):
     purchased_names = {purchase["name"] for purchase in purchases}
 
-    print("\nKatalog Barang")
-    print("--------------")
-    for index, item in enumerate(STORE_ITEMS, start=1):
+    print("\nGoal Barang")
+    print("-----------")
+
+    if not goal_items:
+        print("Belum ada goal barang. Tambahkan goal dulu dari menu toko.")
+        return
+
+    for index, item in enumerate(goal_items, start=1):
         status = "sudah dibeli" if item["name"] in purchased_names else "tersedia"
         print(f"{index}. {item['name']} - {format_money(item['price'])} ({status})")
 
@@ -214,27 +257,16 @@ def buy_item(item, investment_plan, purchases):
     print("Pembelian ini sekali beli dan tidak menjadi habit.")
 
 
-def create_custom_purchase(investment_plan, purchases):
-    item_name = input("Masukkan nama barang sekali beli: ").strip()
-
-    while not item_name:
-        print("Nama barang tidak boleh kosong.")
-        item_name = input("Masukkan nama barang sekali beli: ").strip()
-
-    price = read_float("Masukkan harga barang: ", minimum=0)
-    buy_item({"name": item_name, "price": price}, investment_plan, purchases)
-
-
-def open_store(investment_plan, purchases):
+def open_store(investment_plan, goal_items, purchases):
     while True:
         show_purchase_summary(investment_plan, purchases)
-        show_store_catalog(purchases)
+        show_store_catalog(goal_items, purchases)
 
         print(
             """
 Menu Toko
-1. Beli barang dari katalog
-2. Beli barang custom
+1. Beli goal barang
+2. Tambah goal barang
 3. Lihat ringkasan belanja
 0. Kembali ke menu utama
 """
@@ -243,14 +275,18 @@ Menu Toko
         selection = read_int("Insert nomor: ")
 
         if selection == 1:
+            if not goal_items:
+                print("Belum ada goal barang untuk dibeli.")
+                continue
+
             item_number = read_int("Pilih nomor barang: ")
-            if item_number < 1 or item_number > len(STORE_ITEMS):
+            if item_number < 1 or item_number > len(goal_items):
                 print("Barang tidak tersedia.")
                 continue
 
-            buy_item(STORE_ITEMS[item_number - 1], investment_plan, purchases)
+            buy_item(goal_items[item_number - 1], investment_plan, purchases)
         elif selection == 2:
-            create_custom_purchase(investment_plan, purchases)
+            add_goal_item(goal_items)
         elif selection == 3:
             show_purchase_summary(investment_plan, purchases)
         elif selection == 0:
@@ -283,23 +319,36 @@ def show_habits_summary(habits):
     print(f"Total monthly savings: {format_money(calculate_total_monthly_savings(habits))}")
 
 
-def show_profile(investment_plan, habits):
+def show_goal_items_summary(goal_items):
+    print("\nGoal Barang Sekali Beli")
+    print("-----------------------")
+
+    if not goal_items:
+        print("Belum ada goal barang yang dibuat.")
+        return
+
+    for index, item in enumerate(goal_items, start=1):
+        print(f"{index}. {item['name']} - {format_money(item['price'])}")
+
+
+def show_profile(investment_plan, habits, goal_items):
     if investment_plan is None:
         print("\nInvestment Plan belum dibuat.")
     else:
         show_investment_summary(investment_plan)
 
     show_habits_summary(habits)
+    show_goal_items_summary(goal_items)
 
 
-def run_simulation(investment_plan, habits):
+def run_simulation(investment_plan, habits, goal_items):
     results = calculate_timeline(investment_plan, habits)
     final_year = max(results)
     final_value = results[final_year]["total_value"]
 
-    show_profile(investment_plan, habits)
+    show_profile(investment_plan, habits, goal_items)
     show_timeline(results)
-    show_buying_power(final_value)
+    show_buying_power(final_value, goal_items)
 
     return results
 
@@ -307,6 +356,7 @@ def run_simulation(investment_plan, habits):
 def main():
     investment_plan = None
     habits = []
+    goal_items = []
     purchases = []
 
     while True:
@@ -318,7 +368,8 @@ Menu Utama
 3. Lihat profil dan kebiasaan
 4. Buka timeline opportunity cost
 5. Hapus semua kebiasaan
-6. Buka toko barang sekali beli
+6. Tambah goal barang sekali beli
+7. Buka toko barang sekali beli
 0. Keluar
 """
         )
@@ -327,6 +378,7 @@ Menu Utama
 
         if selection == 1:
             investment_plan = create_investment_plan()
+            goal_items = setup_goal_items()
             purchases = []
             show_investment_summary(investment_plan)
         elif selection == 2:
@@ -337,22 +389,29 @@ Menu Utama
             habits.append(create_habit())
             show_habits_summary(habits)
         elif selection == 3:
-            show_profile(investment_plan, habits)
+            show_profile(investment_plan, habits, goal_items)
         elif selection == 4:
             if investment_plan is None:
                 print("Masukkan uang awal dulu sebelum membuka timeline.")
                 continue
 
-            run_simulation(investment_plan, habits)
+            run_simulation(investment_plan, habits, goal_items)
         elif selection == 5:
             habits = []
             print("Semua kebiasaan sudah dihapus.")
         elif selection == 6:
             if investment_plan is None:
+                print("Masukkan uang awal dulu sebelum menambahkan goal barang.")
+                continue
+
+            add_goal_item(goal_items)
+            show_goal_items_summary(goal_items)
+        elif selection == 7:
+            if investment_plan is None:
                 print("Masukkan uang awal dulu sebelum membuka toko.")
                 continue
 
-            open_store(investment_plan, purchases)
+            open_store(investment_plan, goal_items, purchases)
         elif selection == 0:
             print("Program selesai.")
             break
