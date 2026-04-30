@@ -131,8 +131,11 @@ Menu Utama
 
             read_str("Pencet tombol enter untuk kembali ke menu awal: ")
         elif selection == 6:
-            habits.clear()
-            print("Semua kebiasaan telah dihapus.")
+            if len(habits) > 0:
+                habits.clear()
+                print("Semua kebiasaan telah dihapus.")
+            else:
+                print("Tidak ada kebiasaan.")
         elif selection == 0:
             break
         else:
