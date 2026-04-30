@@ -54,40 +54,97 @@ def create_new_habit(habits):
     habit_interval = read_int("Masukkan frekuensi kebiasaan ini (dalam waktu hari): ")
     habit_cost = read_float("Masukkan biaya: ")
 
-    habits.append({"name": habit_name, "interval": habit_interval, "cost": habit_cost})
+    is_positive = read_yes_no("Apakah kebiasaan ini positif/menghasilkan uang? (y/n): ")
 
-
-def show_timeline(habits, saldo, annual_return):
-    for years in TIMELINE_YEARS:
-        print(
-            f"{years} tahun: {format_money(saldo + saldo * (annual_return * 100) * years)}"
+    if is_positive:
+        habit_return_back = read_float(
+            f"Masukkan uang yang kembali setiap {habit_interval} hari: "
         )
+    else:
+        habit_return_back = 0
+
+    habits.append({
+        "name": habit_name,
+        "interval": habit_interval,
+        "cost": habit_cost,
+        "is_positive": is_positive,
+        "return_back": habit_return_back
+    })
+
+
+def show_timeline(habits, purchases, saldo, annual_return):
+    annual_rate = annual_return / 100
+
+    for years in TIMELINE_YEARS:
+        total_habit_cost = 0
+        total_habit_return = 0
+
+        for habit in habits:
+            total_days = years * 365
+            times_done = total_days / habit["interval"]
+
+            total_habit_cost += habit["cost"] * times_done
+            total_habit_return += habit["return_back"] * times_done
+
+        total_product_return = 0
+
+        for item in purchases:
+            total_product_return += item["annual_return_back"] * years
+
+        money_before_investment = (
+            saldo
+            - total_habit_cost
+            + total_habit_return
+            + total_product_return
+        )
+
+        money_after_investment = money_before_investment * ((1 + annual_rate) ** years)
+
+        print(f"""
+{years} tahun
+Saldo sekarang: {format_money(saldo)}
+Total biaya kebiasaan: {format_money(total_habit_cost)}
+Total return kebiasaan: {format_money(total_habit_return)}
+Total return produk: {format_money(total_product_return)}
+Uang sebelum investasi: {format_money(money_before_investment)}
+Uang setelah investasi: {format_money(money_after_investment)}
+""")
 
 
 def show_profile(habits):
     if len(habits) > 0:
         print("Daftar semua kebiasaan:")
         for i in range(len(habits)):
+            habit = habits[i]
+
             print(f"""
-{i+1}. {habits[i]["name"]}
-Frekuensi: setiap {habits[i]["interval"]} hari
-Harga setiap {habits[i]["interval"]} hari: {format_money(habits[i]["cost"])}
-    """)
+{i + 1}. {habit["name"]}
+Frekuensi: setiap {habit["interval"]} hari
+Biaya setiap {habit["interval"]} hari: {format_money(habit["cost"])}
+Positif: {"Ya" if habit["is_positive"] else "Tidak"}
+Return setiap {habit["interval"]} hari: {format_money(habit["return_back"])}
+""")
     else:
         print("Tidak ada kebiasaan untuk dilihat.")
 
 
 def add_item_to_catalog(catalog):
     created = False
+
     while created == False:
         name = input("Masukkan nama barang baru: ")
-        price = read_int("Masukkan harga barang: ")
+        price = read_float("Masukkan harga barang: ")
+        annual_return_back = read_float("Masukkan uang yang kembali dari barang ini per tahun: ")
 
         if price <= 0:
             print("Harga harus lebih dari 0.")
             continue
 
-        new_item = {"name": name, "price": price}
+        new_item = {
+            "name": name,
+            "price": price,
+            "annual_return_back": annual_return_back
+        }
 
         catalog.append(new_item)
         created = True
@@ -97,10 +154,10 @@ def add_item_to_catalog(catalog):
 
 def open_store(saldo, purchases):
     catalog = [
-        {"name": "Pensil", "price": 3000},
-        {"name": "Buku", "price": 10000},
-        {"name": "Penghapus", "price": 2000},
-        {"name": "Pulpen", "price": 5000},
+        {"name": "Pensil", "price": 3000, "annual_return_back": 0},
+        {"name": "Buku", "price": 10000, "annual_return_back": 0},
+        {"name": "Penghapus", "price": 2000, "annual_return_back": 0},
+        {"name": "Pulpen", "price": 5000, "annual_return_back": 0},
     ]
 
     while True:
@@ -110,7 +167,7 @@ def open_store(saldo, purchases):
 
         print(f"""
 Menu Toko
-Saldo: Rp{saldo}
+Saldo: {format_money(saldo)}
 
 1. Beli barang dari katalog
 2. Tambah barang sendiri
@@ -125,7 +182,11 @@ Saldo: Rp{saldo}
 
             for i in range(len(catalog)):
                 item = catalog[i]
-                print(f"{i + 1}. {item['name']} - Rp{item['price']}")
+                print(
+                    f"{i + 1}. {item['name']} - "
+                    f"Harga: {format_money(item['price'])} - "
+                    f"Return/tahun: {format_money(item['annual_return_back'])}"
+                )
 
             print("0. Batal")
 
@@ -142,22 +203,33 @@ Saldo: Rp{saldo}
 
             if saldo >= selected_item["price"]:
                 saldo -= selected_item["price"]
-                purchases.append(selected_item["name"])
+
+                purchases.append({
+                    "name": selected_item["name"],
+                    "price": selected_item["price"],
+                    "annual_return_back": selected_item["annual_return_back"]
+                })
 
                 print(f"Berhasil membeli {selected_item['name']}.")
-                print(f"Sisa saldo: Rp{saldo}")
+                print(f"Sisa saldo: {format_money(saldo)}")
             else:
                 print("Saldo tidak cukup.")
 
         elif selection == 2:
             add_item_to_catalog(catalog)
+
         elif selection == 3:
             if len(purchases) == 0:
                 print("Belum ada pembelian.")
             else:
                 print("\nDaftar Pembelian:")
                 for i in range(len(purchases)):
-                    print(f"{i + 1}. {purchases[i]}")
+                    item = purchases[i]
+                    print(
+                        f"{i + 1}. {item['name']} - "
+                        f"Harga: {format_money(item['price'])} - "
+                        f"Return/tahun: {format_money(item['annual_return_back'])}"
+                    )
 
         elif selection == 0:
             break
@@ -219,7 +291,7 @@ Menu Utama
                 print("Masukkan uang awal dulu.")
                 continue
 
-            show_timeline(habits, saldo, annual_return)
+            show_timeline(habits, purchases, saldo, annual_return)
 
             read_str("Pencet tombol enter untuk kembali ke menu awal: ")
         elif selection == 6:
