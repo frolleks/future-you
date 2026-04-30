@@ -175,6 +175,8 @@ Total return produk: {format_money(total_product_return)}
 Uang jika tidak di investasi: {format_money(money_before_investment)}
 Uang jika di investasi: {format_money(money_after_investment)}
 """)
+        if money_before_investment < saldo:
+            print("⚠️ Pengeluaran anda melebihi saldo anda!")
 
 
 def show_profile(habits):
@@ -329,7 +331,7 @@ def main():
             print("""
 Menu Utama
 1. Masukkan atau ubah uang awal
-2. Tambah investment plan
+2. Tambah atau ubah investment plan
 3. Tambah kebiasaan
 4. Lihat profil dan kebiasaan
 5. Buka timeline opportunity cost
@@ -373,7 +375,7 @@ Menu Utama
                 continue
 
             if annual_return == 0:
-                print("Anda belum mengatur investment plan. Return investasi dianggap 0%.")
+                print("⚠️ Anda belum mengatur investment plan. Return investasi dianggap 0%.")
 
             show_timeline(habits, purchases, saldo, annual_return)
             pause()
