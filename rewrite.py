@@ -52,16 +52,16 @@ def read_yes_no(prompt):
 def create_new_habit(habits):
     habit_name = read_str("Masukkan nama kebiasaan: ")
     habit_interval = read_int("Masukkan frekuensi kebiasaan ini (dalam waktu hari): ")
-    habit_cost = read_float(
-        "Masukkan biaya: "
-    )
+    habit_cost = read_float("Masukkan biaya: ")
 
     habits.append({"name": habit_name, "interval": habit_interval, "cost": habit_cost})
 
 
 def show_timeline(habits, saldo, annual_return):
     for years in TIMELINE_YEARS:
-        print(f"{years} tahun: {format_money(saldo + saldo * (annual_return * 100) * years)}")
+        print(
+            f"{years} tahun: {format_money(saldo + saldo * (annual_return * 100) * years)}"
+        )
 
 
 def show_profile(habits):
@@ -77,10 +77,102 @@ Harga setiap {habits[i]["interval"]} hari: {format_money(habits[i]["cost"])}
         print("Tidak ada kebiasaan untuk dilihat.")
 
 
+def add_item_to_catalog(catalog):
+    created = False
+    while created == False:
+        name = input("Masukkan nama barang baru: ")
+        price = read_int("Masukkan harga barang: ")
+
+        if price <= 0:
+            print("Harga harus lebih dari 0.")
+            continue
+
+        new_item = {"name": name, "price": price}
+
+        catalog.append(new_item)
+        created = True
+
+    print(f"{name} berhasil ditambahkan ke katalog.")
+
+
+def open_store(saldo, purchases):
+    catalog = [
+        {"name": "Pensil", "price": 3000},
+        {"name": "Buku", "price": 10000},
+        {"name": "Penghapus", "price": 2000},
+        {"name": "Pulpen", "price": 5000},
+    ]
+
+    while True:
+        if saldo <= 0:
+            print("Anda tidak memiliki saldo.")
+            break
+
+        print(f"""
+Menu Toko
+Saldo: Rp{saldo}
+
+1. Beli barang dari katalog
+2. Tambah barang sendiri
+3. Lihat daftar pembelian
+0. Keluar
+""")
+
+        selection = read_int("Insert nomor: ")
+
+        if selection == 1:
+            print("\nKatalog Barang:")
+
+            for i in range(len(catalog)):
+                item = catalog[i]
+                print(f"{i + 1}. {item['name']} - Rp{item['price']}")
+
+            print("0. Batal")
+
+            item_choice = read_int("Pilih barang: ")
+
+            if item_choice == 0:
+                continue
+
+            if item_choice < 1 or item_choice > len(catalog):
+                print("Barang tidak tersedia.")
+                continue
+
+            selected_item = catalog[item_choice - 1]
+
+            if saldo >= selected_item["price"]:
+                saldo -= selected_item["price"]
+                purchases.append(selected_item["name"])
+
+                print(f"Berhasil membeli {selected_item['name']}.")
+                print(f"Sisa saldo: Rp{saldo}")
+            else:
+                print("Saldo tidak cukup.")
+
+        elif selection == 2:
+            add_item_to_catalog(catalog)
+        elif selection == 3:
+            if len(purchases) == 0:
+                print("Belum ada pembelian.")
+            else:
+                print("\nDaftar Pembelian:")
+                for i in range(len(purchases)):
+                    print(f"{i + 1}. {purchases[i]}")
+
+        elif selection == 0:
+            break
+
+        else:
+            print("Tidak tersedia.")
+
+    return saldo
+
+
 def main():
     saldo = 0
     annual_return = 0
     habits = []
+    purchases = []
 
     while True:
         if saldo > 0:
@@ -136,6 +228,8 @@ Menu Utama
                 print("Semua kebiasaan telah dihapus.")
             else:
                 print("Tidak ada kebiasaan.")
+        elif selection == 7:
+            saldo = open_store(saldo, purchases)
         elif selection == 0:
             break
         else:
