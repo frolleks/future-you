@@ -154,10 +154,10 @@ def add_item_to_catalog(catalog):
 
 def open_store(saldo, purchases):
     catalog = [
-        {"name": "Pensil", "price": 3000, "annual_return_back": 0},
-        {"name": "Buku", "price": 10000, "annual_return_back": 0},
-        {"name": "Penghapus", "price": 2000, "annual_return_back": 0},
-        {"name": "Pulpen", "price": 5000, "annual_return_back": 0},
+        {"name": "Laptop buat produktivitas", "price": 30000000, "annual_return_back": 8},
+        {"name": "Kursus leher ke atas", "price": 3500000, "annual_return_back": 2},
+        {"name": "Nintendo Switch 2", "price": 8000000, "annual_return_back": 0},
+        {"name": "Sepatu Nike Air Jordan", "price": 1500000, "annual_return_back": 0},
     ]
 
     while True:
