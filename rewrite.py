@@ -31,7 +31,7 @@ def read_float(prompt, minimum=0):
         return value
 
 
-def read_int(prompt, minimum=None):
+def read_int(prompt, minimum=0):
     while True:
         try:
             value = int(input(prompt))
@@ -147,6 +147,8 @@ def show_timeline(habits, purchases, saldo, annual_return):
             times_done = total_days / habit["interval"]
 
             total_habit_cost += habit["cost"] * times_done
+            if not habit["is_positive"]:
+                total_habit_cost += habit["cost"] * times_done
             total_habit_return += habit["return_back"] * times_done
 
         total_product_return = 0
@@ -162,7 +164,7 @@ def show_timeline(habits, purchases, saldo, annual_return):
             + total_product_return
         )
 
-        money_after_investment = money_before_investment * ((1 + annual_rate) ** years)
+        money_after_investment = saldo * ((1 + annual_rate) ** years)
 
         print(f"""
 {years} tahun
@@ -170,8 +172,8 @@ Saldo sekarang: {format_money(saldo)}
 Total biaya kebiasaan: {format_money(total_habit_cost)}
 Total return kebiasaan: {format_money(total_habit_return)}
 Total return produk: {format_money(total_product_return)}
-Uang sebelum investasi: {format_money(money_before_investment)}
-Uang setelah investasi: {format_money(money_after_investment)}
+Uang jika tidak di investasi: {format_money(money_before_investment)}
+Uang jika di investasi: {format_money(money_after_investment)}
 """)
 
 
@@ -241,7 +243,7 @@ def select_catalog_item(catalog):
     print("0. Batal")
 
     while True:
-        choice = read_int("Pilih barang: ", minimum=0)
+        choice = read_int("Pilih barang: ")
 
         if choice == 0:
             return None
@@ -369,6 +371,9 @@ Menu Utama
             if saldo == 0:
                 print("Masukkan uang awal dulu.")
                 continue
+
+            if annual_return == 0:
+                print("Anda belum mengatur investment plan. Return investasi dianggap 0%.")
 
             show_timeline(habits, purchases, saldo, annual_return)
             pause()
