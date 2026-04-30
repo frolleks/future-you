@@ -1,5 +1,15 @@
 TIMELINE_YEARS = [1, 5, 10, 20, 30]
 
+ascii = """ 
+
+  ______     _                   __     __         
+ |  ____|   | |                  \ \   / /         
+ | |__ _   _| |_ _   _ _ __ ___   \ \_/ /__  _   _ 
+ |  __| | | | __| | | | '__/ _ \   \   / _ \| | | |
+ | |  | |_| | |_| |_| | | |  __/    | | (_) | |_| |
+ |_|   \__,_|\__|\__,_|_|  \___|    |_|\___/ \__,_|
+                                                                                                  
+"""
 
 def format_money(value):
     return "Rp" + format(value, ",.2f")
@@ -247,6 +257,7 @@ def main():
     purchases = []
 
     while True:
+        print(ascii)
         if saldo > 0:
             print("""
 Menu Utama
