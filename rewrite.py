@@ -112,7 +112,7 @@ def create_new_habit(habits):
 
     habit_cost = read_float("Masukkan biaya: ")
 
-    is_positive = read_yes_no("Apakah kebiasaan ini positif/menghasilkan uang? (y/n): ")
+    is_positive = read_yes_no("Apakah kebiasaan ini menghasilkan uang atau manfaat finansial langsung? (y/n): ")
 
     if is_positive:
         habit_return_back = read_float(
@@ -139,42 +139,61 @@ def show_timeline(habits, purchases, saldo, annual_return):
     for years in TIMELINE_YEARS:
         total_habit_cost = 0
         total_habit_return = 0
+        total_product_return = 0
+        total_product_opportunity_cost = 0
+
+        total_days = years * 365
 
         for habit in habits:
-            total_days = years * 365
             times_done = total_days / habit["interval"]
 
-            total_habit_cost += habit["cost"] * times_done
-            if not habit["is_positive"]:
-                total_habit_cost += habit["cost"] * times_done
-            total_habit_return += habit["return_back"] * times_done
+            habit_total_cost = habit["cost"] * times_done
+            habit_total_return = habit["return_back"] * times_done
 
-        total_product_return = 0
+            total_habit_cost += habit_total_cost
+            total_habit_return += habit_total_return
 
         for item in purchases:
-            product_annual_return = item["price"] * (item["annual_return_percent"] / 100)
-            total_product_return += product_annual_return * years
+            product_return_rate = item["annual_return_percent"] / 100
 
-        money_before_investment = (
+            product_return = item["price"] * product_return_rate * years
+            total_product_return += product_return
+
+            invested_value_of_product_price = item["price"] * ((1 + annual_rate) ** years)
+            total_product_opportunity_cost += invested_value_of_product_price - item["price"]
+
+        saldo_after_lifestyle = (
             saldo
             - total_habit_cost
             + total_habit_return
             + total_product_return
         )
 
-        money_after_investment = saldo * ((1 + annual_rate) ** years)
+        saldo_if_invested_only = saldo * ((1 + annual_rate) ** years)
+
+        net_difference = saldo_if_invested_only - saldo_after_lifestyle
 
         print(f"""
 {years} tahun
+
 Saldo sekarang: {format_money(saldo)}
+
+Efek kebiasaan:
 Total biaya kebiasaan: {format_money(total_habit_cost)}
-Total return kebiasaan: {format_money(total_habit_return)}
-Total return produk: {format_money(total_product_return)}
-Uang jika tidak di investasi: {format_money(money_before_investment)}
-Uang jika di investasi: {format_money(money_after_investment)}
+Total uang kembali dari kebiasaan: {format_money(total_habit_return)}
+
+Efek barang:
+Total return barang: {format_money(total_product_return)}
+Opportunity cost barang jika uangnya diinvestasikan: {format_money(total_product_opportunity_cost)}
+
+Hasil akhir:
+Saldo setelah kebiasaan dan barang: {format_money(saldo_after_lifestyle)}
+Saldo jika saldo sekarang diinvestasikan: {format_money(saldo_if_invested_only)}
+Selisih investasi vs gaya hidup: {format_money(net_difference)}
 """)
-        if money_before_investment < saldo:
-            print("⚠️ Pengeluaran anda melebihi saldo anda!")
+
+        if saldo_after_lifestyle < 0:
+            print("Peringatan: pengeluaran dan kebiasaan membuat saldo menjadi negatif.")
 
 
 def show_profile(habits):
@@ -199,7 +218,9 @@ Return: {format_money(habit["return_back"])}
 def add_item_to_catalog(catalog):
     name = read_str("Masukkan nama barang baru: ")
     price = read_float("Masukkan harga barang: ", minimum=1)
-    annual_return_percent = read_float("Masukkan return barang ini per tahun (%): ")
+    annual_return_percent = read_float(
+        "Masukkan estimasi manfaat/return barang ini per tahun (% dari harga barang): "
+    )
 
     new_item = {
         "name": name,
