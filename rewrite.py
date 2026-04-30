@@ -53,15 +53,15 @@ def create_new_habit(habits):
     habit_name = read_str("Masukkan nama kebiasaan: ")
     habit_interval = read_int("Masukkan frekuensi kebiasaan ini (dalam waktu hari): ")
     habit_cost = read_float(
-        "Masukkan jumlah nominal uang yang dipakai setiap interval untuk kebiasaan ini: "
+        "Masukkan biaya: "
     )
 
     habits.append({"name": habit_name, "interval": habit_interval, "cost": habit_cost})
 
 
 def show_timeline(habits, saldo, annual_return):
-    for i in range(len(TIMELINE_YEARS)):
-        print(f"{i} tahun: {format_money(saldo + saldo * (annual_return * 100) * i)}")
+    for years in TIMELINE_YEARS:
+        print(f"{years} tahun: {format_money(saldo + saldo * (annual_return * 100) * years)}")
 
 
 def show_profile(habits):
